@@ -1,57 +1,67 @@
+/**
+ * Takes an arbitrary GeoJSON object and converts it to a
+ * Feature or FeatureCollection
+ *
+ * @module turf/to-features
+ * @param {Feature|Geometry|FeatureCollection|GeometryCollection} geojson geojson to convert
+ * @return {Feature|Collection}
+ * @example
+ * var poly = {
+ *   "type": "Polygon",
+ *   "coordinates": [[
+ *     [-122.801742, 45.48565],
+ *     [-122.801742, 45.60491],
+ *     [-122.584762, 45.60491],
+ *     [-122.584762, 45.48565],
+ *     [-122.801742, 45.48565]
+ *   ]]
+ * };
+ *
+ * var feature = turf.toFeatures(poly);
+ *
+ * // Feature is:
+ * {
+ *   "type": "Feature",
+ *   "properties": {},
+ *   "geometry": {
+ *     "type": "Polygon",
+ *     "coordinates": [[
+ *       [-122.801742, 45.48565],
+ *       [-122.801742, 45.60491],
+ *       [-122.584762, 45.60491],
+ *       [-122.584762, 45.48565],
+ *       [-122.801742, 45.48565]
+ *     ]]
+ *   }
+ * };
+ */
+module.exports = function (geojson) {
+    if (geojson.type == 'Feature' || geojson.type == 'FeatureCollection') {
+        return geojson;
+    }
 
+    if (geojson["coordinates"]) {
+        return {
+            "type": "Feature",
+            "properties": {},
+            "geometry": geojson
+        };
+    }
 
-module.exports = {
-    toFeatures: function (geojson) {
-        if (geojson.type == 'Feature' || geojson.type == 'FeatureCollection') {
-            return geojson;
-        }
+    if (geojson.type == 'GeometryCollection') {
+        var geo = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
-        if (geojson["coordinates"]) {
-            return {
+        geojson.geometries.forEach(function (elem) {
+            geo.features.push({
                 "type": "Feature",
                 "properties": {},
-                "geometry": geojson
-            };
-        }
-
-        if (geojson.type == 'GeometryCollection') {
-            var geo = {
-                "type": "FeatureCollection",
-                "features": []
-            };
-
-            geojson.geometries.forEach(function (elem) {
-                geo.features.push({
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": elem
-                });
+                "geometry": elem
             });
+        });
 
-            return geo;
-        }
-    },
-
-    toGeometries: function (geojson) {
-        if (geojson.type == 'Feature') {
-            return geojson.geometry;
-        }
-
-        if (geojson.type == 'GeometryCollection' || geojson["coordinates"]) {
-            return geojson;
-        }
-
-        if (geojson.type == 'FeatureCollection') {
-            var geo = {
-                "type": "GeometryCollection",
-                "geometries": []
-            };
-
-            geojson.features.forEach(function (elem) {
-                geo.geometries.push(elem.geometry);
-            });
-
-            return geo;
-        }
+        return geo;
     }
-}
+};
